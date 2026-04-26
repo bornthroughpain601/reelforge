@@ -1,12 +1,67 @@
- if (data.error) {
+import React, { useState } from 'react'
+import ReactDOM from 'react-dom/client'
+
+function App() {
+  const [topic, setTopic] = useState('')
+  const [style, setStyle] = useState('Doodle Animation')
+  const [emotion, setEmotion] = useState('Humor and Comedy')
+  const [audience, setAudience] = useState('General Public')
+  const [length, setLength] = useState('30 seconds')
+  const [pacing, setPacing] = useState('Fast and Punchy')
+  const [hook, setHook] = useState('Question Hook')
+  const [narrative, setNarrative] = useState('Problem — Solution — Result')
+  const [conflict, setConflict] = useState('Person vs Self')
+  const [character, setCharacter] = useState('The Everyman')
+  const [setting, setSetting] = useState('Everyday Life')
+  const [twist, setTwist] = useState('Unexpected Reversal')
+  const [visualStyle, setVisualStyle] = useState('High Contrast Bold Text')
+  const [musicMood, setMusicMood] = useState('Upbeat and Energetic')
+  const [voiceTone, setVoiceTone] = useState('Conversational')
+  const [platform, setPlatform] = useState('Instagram Reels')
+  const [cta, setCta] = useState('Follow For More')
+  const [contentPillar, setContentPillar] = useState('Entertainment')
+  const [script, setScript] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  const label = {
+    color:'#ff6b35',fontWeight:'bold',fontSize:'13px',
+    letterSpacing:'2px',textTransform:'uppercase',
+    display:'block',marginBottom:'8px',marginTop:'20px'
+  }
+
+  const select = {
+    display:'block',width:'100%',padding:'11px',
+    backgroundColor:'#2a2a2a',border:'1px solid #444',
+    borderRadius:'8px',color:'white',fontSize:'14px',marginBottom:'4px'
+  }
+
+  const handleGenerate = async () => {
+    if (!topic.trim()) {
+      setError('Please enter a topic or story first.')
+      return
+    }
+    setLoading(true)
+    setError('')
+    setScript('')
+    const key = import.meta.env.VITE_GEMINI_API_KEY
+    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + key
+    const prompt = 'You are a world class short form video script writer. Generate a complete video script. STORY: ' + topic + ' STYLE: ' + style + ' EMOTION: ' + emotion + ' NARRATIVE: ' + narrative + ' CONFLICT: ' + conflict + ' CHARACTER: ' + character + ' SETTING: ' + setting + ' HOOK: ' + hook + ' TWIST: ' + twist + ' PACING: ' + pacing + ' VISUAL: ' + visualStyle + ' MUSIC: ' + musicMood + ' VOICE: ' + voiceTone + ' AUDIENCE: ' + audience + ' PLATFORM: ' + platform + ' LENGTH: ' + length + ' PILLAR: ' + contentPillar + ' CTA: ' + cta + ' Write the script with: TITLE, HOOK, SCENE 1, SCENE 2, SCENE 3, CLIMAX, RESOLUTION, CALL TO ACTION, CAPTION with hashtags.'
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+      })
+      const data = await res.json()
+      if (data.error) {
         setError('API Error: ' + data.error.message)
-        setLoading(false)
-        return
+      } else {
+        const text = data.candidates[0].content.parts[0].text
+        setScript(text)
       }
-      const text = data.candidates[0].content.parts[0].text
-      setScript(text)
-    } catch (err) {
-      setError('Error: ' + err.message)
+    } catch (e) {
+      setError('Error: ' + e.message)
     }
     setLoading(false)
   }
@@ -17,11 +72,9 @@
         <h1 style={{margin:0,color:'#ff6b35',fontSize:'26px',letterSpacing:'2px'}}>REELFORGE</h1>
         <span style={{color:'#555',fontSize:'13px'}}>AI Powered Video Generation</span>
       </nav>
-
       <div style={{maxWidth:'700px',margin:'50px auto',padding:'40px',backgroundColor:'#1a1a1a',borderRadius:'16px'}}>
         <h2 style={{marginBottom:'8px'}}>Generate Your Reel</h2>
         <p style={{color:'#666',fontSize:'13px',marginBottom:'24px'}}>Fill in every field for the best possible output.</p>
-
         <span style={label}>Your Story or Topic</span>
         <textarea
           placeholder="Write your full story here. Include characters, setting, conflict, climax and resolution."
@@ -30,7 +83,6 @@
           rows={6}
           style={{display:'block',width:'100%',padding:'14px',backgroundColor:'#2a2a2a',border:'1px solid #444',borderRadius:'8px',color:'white',fontSize:'14px',boxSizing:'border-box',resize:'vertical',lineHeight:'1.7'}}
         />
-
         <span style={label}>Animation Style</span>
         <select value={style} onChange={e => setStyle(e.target.value)} style={select}>
           <option>Doodle Animation</option>
@@ -42,7 +94,6 @@
           <option>Typographic</option>
           <option>Mixed Media</option>
         </select>
-
         <span style={label}>Core Emotion</span>
         <select value={emotion} onChange={e => setEmotion(e.target.value)} style={select}>
           <option>Love and Beauty</option>
@@ -55,7 +106,6 @@
           <option>Wonder and Amazement</option>
           <option>Peace and Serenity</option>
         </select>
-
         <span style={label}>Narrative Framework</span>
         <select value={narrative} onChange={e => setNarrative(e.target.value)} style={select}>
           <option>Problem — Solution — Result</option>
@@ -69,7 +119,6 @@
           <option>False Start</option>
           <option>The List</option>
         </select>
-
         <span style={label}>Type of Conflict</span>
         <select value={conflict} onChange={e => setConflict(e.target.value)} style={select}>
           <option>Person vs Self</option>
@@ -80,7 +129,6 @@
           <option>Person vs Fate</option>
           <option>Person vs Unknown</option>
         </select>
-
         <span style={label}>Character Archetype</span>
         <select value={character} onChange={e => setCharacter(e.target.value)} style={select}>
           <option>The Everyman</option>
@@ -94,7 +142,6 @@
           <option>The Lover</option>
           <option>No Character — Narrator Only</option>
         </select>
-
         <span style={label}>Setting</span>
         <select value={setting} onChange={e => setSetting(e.target.value)} style={select}>
           <option>Everyday Life</option>
@@ -108,7 +155,6 @@
           <option>Workplace</option>
           <option>Domestic Home</option>
         </select>
-
         <span style={label}>Hook Type</span>
         <select value={hook} onChange={e => setHook(e.target.value)} style={select}>
           <option>Question Hook</option>
@@ -127,7 +173,6 @@
           <option>Before and After Hook</option>
           <option>Pain Point Hook</option>
         </select>
-
         <span style={label}>Twist or Surprise</span>
         <select value={twist} onChange={e => setTwist(e.target.value)} style={select}>
           <option>Unexpected Reversal</option>
@@ -138,7 +183,6 @@
           <option>Role Reversal</option>
           <option>No Twist — Straight Narrative</option>
         </select>
-
         <span style={label}>Overall Pacing</span>
         <select value={pacing} onChange={e => setPacing(e.target.value)} style={select}>
           <option>Slow and Cinematic</option>
@@ -149,7 +193,6 @@
           <option>Rhythmic and Musical</option>
           <option>Erratic and Chaotic</option>
         </select>
-
         <span style={label}>Visual Style</span>
         <select value={visualStyle} onChange={e => setVisualStyle(e.target.value)} style={select}>
           <option>High Contrast Bold Text</option>
@@ -161,7 +204,6 @@
           <option>Nature and Earthy</option>
           <option>Black and White</option>
         </select>
-
         <span style={label}>Music Mood</span>
         <select value={musicMood} onChange={e => setMusicMood(e.target.value)} style={select}>
           <option>Upbeat and Energetic</option>
@@ -174,7 +216,6 @@
           <option>Horror Ambient</option>
           <option>Romantic and Soft</option>
         </select>
-
         <span style={label}>Voice Tone</span>
         <select value={voiceTone} onChange={e => setVoiceTone(e.target.value)} style={select}>
           <option>Conversational</option>
@@ -187,7 +228,6 @@
           <option>Robotic and Detached</option>
           <option>No Voice — Text Only</option>
         </select>
-
         <span style={label}>Target Platform</span>
         <select value={platform} onChange={e => setPlatform(e.target.value)} style={select}>
           <option>Instagram Reels</option>
@@ -198,7 +238,6 @@
           <option>Twitter/X Video</option>
           <option>All Platforms</option>
         </select>
-
         <span style={label}>Video Length</span>
         <select value={length} onChange={e => setLength(e.target.value)} style={select}>
           <option>15 seconds</option>
@@ -207,7 +246,6 @@
           <option>60 seconds</option>
           <option>90 seconds</option>
         </select>
-
         <span style={label}>Target Audience</span>
         <select value={audience} onChange={e => setAudience(e.target.value)} style={select}>
           <option>General Public</option>
@@ -221,7 +259,6 @@
           <option>Seniors</option>
           <option>Niche Community</option>
         </select>
-
         <span style={label}>Content Pillar</span>
         <select value={contentPillar} onChange={e => setContentPillar(e.target.value)} style={select}>
           <option>Entertainment</option>
@@ -235,7 +272,6 @@
           <option>Horror and Thriller</option>
           <option>Romance and Emotion</option>
         </select>
-
         <span style={label}>Call To Action</span>
         <select value={cta} onChange={e => setCta(e.target.value)} style={select}>
           <option>Follow For More</option>
@@ -248,13 +284,11 @@
           <option>Duet or Stitch This</option>
           <option>No Call To Action</option>
         </select>
-
         {error && (
           <div style={{padding:'16px',backgroundColor:'#3a1a1a',border:'1px solid #ff4444',borderRadius:'8px',marginTop:'20px',color:'#ff4444'}}>
             {error}
           </div>
         )}
-
         <button
           onClick={handleGenerate}
           disabled={loading}
@@ -262,7 +296,6 @@
         >
           {loading ? 'Generating Your Script...' : 'Generate Video'}
         </button>
-
         {script && (
           <div style={{marginTop:'32px',padding:'28px',backgroundColor:'#2a2a2a',borderRadius:'12px',border:'1px solid #ff6b35'}}>
             <h3 style={{margin:'0 0 16px 0',color:'#ff6b35'}}>Your Generated Script</h3>
@@ -271,7 +304,6 @@
             </pre>
           </div>
         )}
-
         <div style={{marginTop:'32px',padding:'20px',backgroundColor:'#2a2a2a',borderRadius:'8px'}}>
           <h3 style={{margin:'0 0 8px 0',fontSize:'16px'}}>Queue Status</h3>
           <p style={{margin:0,color:'#666',fontSize:'14px'}}>No videos in queue yet. Generate your first reel above.</p>
