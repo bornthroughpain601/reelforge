@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+ import React, { useState } from 'react'
 import ReactDOM from 'react-dom/client'
 
 function App() {
@@ -25,26 +25,15 @@ function App() {
   const [error, setError] = useState('')
 
   const label = {
-    color:'#ff6b35',
-    fontWeight:'bold',
-    fontSize:'13px',
-    letterSpacing:'2px',
-    textTransform:'uppercase',
-    display:'block',
-    marginBottom:'8px',
-    marginTop:'20px'
+    color:'#ff6b35',fontWeight:'bold',fontSize:'13px',
+    letterSpacing:'2px',textTransform:'uppercase',
+    display:'block',marginBottom:'8px',marginTop:'20px'
   }
 
   const select = {
-    display:'block',
-    width:'100%',
-    padding:'11px',
-    backgroundColor:'#2a2a2a',
-    border:'1px solid #444',
-    borderRadius:'8px',
-    color:'white',
-    fontSize:'14px',
-    marginBottom:'4px'
+    display:'block',width:'100%',padding:'11px',
+    backgroundColor:'#2a2a2a',border:'1px solid #444',
+    borderRadius:'8px',color:'white',fontSize:'14px',marginBottom:'4px'
   }
 
   const handleGenerate = async () => {
@@ -100,7 +89,7 @@ CAPTION: [Full social media caption with hashtags]`
 
     try {
       const res = await fetch(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=' + import.meta.env.VITE_GEMINI_API_KEY,
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + import.meta.env.VITE_GEMINI_API_KEY,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
