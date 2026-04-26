@@ -54,7 +54,7 @@ function App() {
           'Authorization': 'Bearer ' + key
         },
         body: JSON.stringify({
-          model: 'compound-beta',
+          model: 'llama-3.1-8b-instant',
           messages: [{ role: 'user', content: prompt }],
           max_tokens: 1000
         })
