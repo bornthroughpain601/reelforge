@@ -1,12 +1,65 @@
-import React from 'react'
+import React, { useState } from 'react'
 import ReactDOM from 'react-dom/client'
 
 function App() {
+  const [topic, setTopic] = useState('')
+  const [style, setStyle] = useState('Doodle')
+  const [tone, setTone] = useState('Funny')
+
   return (
-    <div>
-      <h1 style={{color:'red'}}>ReelForge is Working</h1>
+    <div style={{backgroundColor:'#0f0f0f',minHeight:'100vh',color:'white',fontFamily:'Arial, sans-serif'}}>
+      <nav style={{backgroundColor:'#1a1a1a',padding:'20px 40px',borderBottom:'1px solid #333'}}>
+        <h1 style={{margin:0,color:'#ff6b35'}}>ReelForge</h1>
+      </nav>
+      <div style={{maxWidth:'600px',margin:'60px auto',padding:'40px',backgroundColor:'#1a1a1a',borderRadius:'12px'}}>
+        <h2 style={{marginBottom:'30px'}}>Generate Your Reel</h2>
+        <div style={{marginBottom:'20px'}}>
+          <label>Topic</label>
+          <input
+            type="text"
+            placeholder="e.g. cat explains quantum physics"
+            value={topic}
+            onChange={e => setTopic(e.target.value)}
+            style={{display:'block',width:'100%',padding:'12px',marginTop:'8px',backgroundColor:'#2a2a2a',border:'1px solid #444',borderRadius:'8px',color:'white',fontSize:'16px',boxSizing:'border-box'}}
+          />
+        </div>
+        <div style={{marginBottom:'20px'}}>
+          <label>Style</label>
+          <select
+            value={style}
+            onChange={e => setStyle(e.target.value)}
+            style={{display:'block',width:'100%',padding:'12px',marginTop:'8px',backgroundColor:'#2a2a2a',border:'1px solid #444',borderRadius:'8px',color:'white',fontSize:'16px'}}
+          >
+            <option>Doodle</option>
+            <option>Faceless</option>
+            <option>Character</option>
+          </select>
+        </div>
+        <div style={{marginBottom:'30px'}}>
+          <label>Tone</label>
+          <select
+            value={tone}
+            onChange={e => setTone(e.target.value)}
+            style={{display:'block',width:'100%',padding:'12px',marginTop:'8px',backgroundColor:'#2a2a2a',border:'1px solid #444',borderRadius:'8px',color:'white',fontSize:'16px'}}
+          >
+            <option>Funny</option>
+            <option>Serious</option>
+            <option>Educational</option>
+          </select>
+        </div>
+        <button
+          onClick={() => alert('Generating ' + style + ' reel about: ' + topic)}
+          style={{display:'block',width:'100%',padding:'16px',backgroundColor:'#ff6b35',border:'none',borderRadius:'8px',color:'white',fontSize:'18px',fontWeight:'bold',cursor:'pointer'}}
+        >
+          Generate Video
+        </button>
+        <div style={{marginTop:'40px',padding:'20px',backgroundColor:'#2a2a2a',borderRadius:'8px'}}>
+          <h3 style={{margin:'0 0 10px 0'}}>Queue Status</h3>
+          <p style={{margin:0,color:'#888'}}>No videos in queue yet. Generate your first reel above.</p>
+        </div>
+      </div>
     </div>
   )
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App/>)
+ReactDOM.createRoot(document.getElementById('root')).render(<React.StrictMode><App/></React.StrictMode>)
