@@ -1,28 +1,6 @@
 import React, { useState } from 'react'
 import ReactDOM from 'react-dom/client'
 
-function Section({ title, children }) {
-  return (
-    <div style={{marginBottom:'28px'}}>
-      <p style={{color:'#ff6b35',fontWeight:'bold',fontSize:'13px',letterSpacing:'2px',textTransform:'uppercase',marginBottom:'12px'}}>{title}</p>
-      {children}
-    </div>
-  )
-}
-
-function Select({ value, onChange, options }) {
-  return (
-    <select value={value} onChange={e => onChange(e.target.value)}
-      style={{display:'block',width:'100%',padding:'11px',backgroundColor:'#2a2a2a',border:'1px solid #444',borderRadius:'8px',color:'white',fontSize:'14px'}}>
-      {options.map(o => <option key={o}>{o}</option>)}
-    </select>
-  )
-}
-
-function Grid({ children }) {
-  return <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'16px'}}>{children}</div>
-}
-
 function App() {
   const [topic, setTopic] = useState('')
   const [style, setStyle] = useState('Doodle Animation')
@@ -31,26 +9,43 @@ function App() {
   const [length, setLength] = useState('30 seconds')
   const [pacing, setPacing] = useState('Fast and Punchy')
   const [hook, setHook] = useState('Question Hook')
-  const [hookPosition, setHookPosition] = useState('First 3 seconds')
   const [narrative, setNarrative] = useState('Problem — Solution — Result')
   const [conflict, setConflict] = useState('Person vs Self')
-  const [characterType, setCharacterType] = useState('The Everyman')
+  const [character, setCharacter] = useState('The Everyman')
   const [setting, setSetting] = useState('Everyday Life')
   const [twist, setTwist] = useState('Unexpected Reversal')
-  const [openingLine, setOpeningLine] = useState('Bold Statement')
   const [visualStyle, setVisualStyle] = useState('High Contrast Bold Text')
-  const [captionStyle, setCaptionStyle] = useState('Word by Word Pop')
   const [musicMood, setMusicMood] = useState('Upbeat and Energetic')
   const [voiceTone, setVoiceTone] = useState('Conversational')
   const [platform, setPlatform] = useState('Instagram Reels')
   const [cta, setCta] = useState('Follow For More')
-  const [ctaPlacement, setCtaPlacement] = useState('Final 3 seconds')
-  const [replayability, setReplayability] = useState('Cliffhanger Ending')
   const [contentPillar, setContentPillar] = useState('Entertainment')
-  const [trend, setTrend] = useState('Original Concept')
   const [script, setScript] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  const label = {
+    color:'#ff6b35',
+    fontWeight:'bold',
+    fontSize:'13px',
+    letterSpacing:'2px',
+    textTransform:'uppercase',
+    display:'block',
+    marginBottom:'8px',
+    marginTop:'20px'
+  }
+
+  const select = {
+    display:'block',
+    width:'100%',
+    padding:'11px',
+    backgroundColor:'#2a2a2a',
+    border:'1px solid #444',
+    borderRadius:'8px',
+    color:'white',
+    fontSize:'14px',
+    marginBottom:'4px'
+  }
 
   const handleGenerate = async () => {
     if (!topic.trim()) {
@@ -63,64 +58,49 @@ function App() {
 
     const prompt = `You are a world class short form video script writer.
 
-Generate a complete video script based on these exact parameters:
-
-STORY OR TOPIC: ${topic}
+Generate a complete video script based on these parameters:
+STORY: ${topic}
 ANIMATION STYLE: ${style}
-CORE EMOTION: ${emotion}
-NARRATIVE FRAMEWORK: ${narrative}
-CONFLICT TYPE: ${conflict}
-CHARACTER ARCHETYPE: ${characterType}
+EMOTION: ${emotion}
+NARRATIVE: ${narrative}
+CONFLICT: ${conflict}
+CHARACTER: ${character}
 SETTING: ${setting}
-HOOK TYPE: ${hook}
-HOOK PLACEMENT: ${hookPosition}
-OPENING LINE STYLE: ${openingLine}
+HOOK: ${hook}
 TWIST: ${twist}
 PACING: ${pacing}
 VISUAL STYLE: ${visualStyle}
-CAPTION STYLE: ${captionStyle}
-MUSIC MOOD: ${musicMood}
-VOICE TONE: ${voiceTone}
-TARGET AUDIENCE: ${audience}
+MUSIC: ${musicMood}
+VOICE: ${voiceTone}
+AUDIENCE: ${audience}
 PLATFORM: ${platform}
-VIDEO LENGTH: ${length}
+LENGTH: ${length}
 CONTENT PILLAR: ${contentPillar}
-TREND APPROACH: ${trend}
-REPLAYABILITY FACTOR: ${replayability}
 CALL TO ACTION: ${cta}
-CTA PLACEMENT: ${ctaPlacement}
 
-Write the script in this exact format:
+Write the script in this format:
 
 TITLE: [Catchy video title]
 
-HOOK (${hookPosition}):
-[Exactly what is said and shown in the opening]
+HOOK: [Opening line and visual]
 
-SCENE 1:
-[Visual description + Voiceover/Caption text]
+SCENE 1: [Visual + Voiceover]
 
-SCENE 2:
-[Visual description + Voiceover/Caption text]
+SCENE 2: [Visual + Voiceover]
 
-SCENE 3:
-[Visual description + Voiceover/Caption text]
+SCENE 3: [Visual + Voiceover]
 
-CLIMAX:
-[The peak moment of the story]
+CLIMAX: [Peak moment]
 
-RESOLUTION:
-[How it ends]
+RESOLUTION: [Ending]
 
-CALL TO ACTION:
-[Exact CTA text]
+CALL TO ACTION: [Exact CTA text]
 
-CAPTION FOR POST:
-[Full Instagram/YouTube caption with hashtags]`
+CAPTION: [Full social media caption with hashtags]`
 
     try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${import.meta.env.VITE_GEMINI_API_KEY}`,
+      const res = await fetch(
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=' + import.meta.env.VITE_GEMINI_API_KEY,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -129,7 +109,7 @@ CAPTION FOR POST:
           })
         }
       )
-      const data = await response.json()
+      const data = await res.json()
       const text = data.candidates[0].content.parts[0].text
       setScript(text)
     } catch (err) {
@@ -145,17 +125,239 @@ CAPTION FOR POST:
         <span style={{color:'#555',fontSize:'13px'}}>AI Powered Video Generation</span>
       </nav>
 
-      <div style={{maxWidth:'740px',margin:'50px auto',padding:'40px',backgroundColor:'#1a1a1a',borderRadius:'16px'}}>
-        <h2 style={{marginBottom:'8px',fontSize:'22px'}}>Generate Your Reel</h2>
-        <p style={{color:'#666',fontSize:'13px',marginBottom:'32px'}}>Fill in every field for the best possible output.</p>
+      <div style={{maxWidth:'700px',margin:'50px auto',padding:'40px',backgroundColor:'#1a1a1a',borderRadius:'16px'}}>
+        <h2 style={{marginBottom:'8px'}}>Generate Your Reel</h2>
+        <p style={{color:'#666',fontSize:'13px',marginBottom:'24px'}}>Fill in every field for the best possible output.</p>
 
-        <Section title="Your Story or Topic">
-          <textarea
-            placeholder="Write your full story, idea, or narrative here. Include characters, setting, conflict, climax, and resolution. The more detail the better."
-            value={topic}
-            onChange={e => setTopic(e.target.value)}
+        <span style={label}>Your Story or Topic</span>
+        <textarea
+          placeholder="Write your full story here. Include characters, setting, conflict, climax and resolution."
+          value={topic}
+          onChange={e => setTopic(e.target.value)}
+          rows={6}
+          style={{display:'block',width:'100%',padding:'14px',backgroundColor:'#2a2a2a',border:'1px solid #444',borderRadius:'8px',color:'white',fontSize:'14px',boxSizing:'border-box',resize:'vertical',lineHeight:'1.7'}}
+        />
+
+        <span style={label}>Animation Style</span>
+        <select value={style} onChange={e => setStyle(e.target.value)} style={select}>
+          <option>Doodle Animation</option>
+          <option>Cartoon Characters</option>
+          <option>Realistic Cinematic</option>
+          <option>Whiteboard Explainer</option>
+          <option>Motion Graphics</option>
+          <option>Stop Motion</option>
+          <option>Typographic</option>
+          <option>Mixed Media</option>
+        </select>
+
+        <span style={label}>Core Emotion</span>
+        <select value={emotion} onChange={e => setEmotion(e.target.value)} style={select}>
+          <option>Love and Beauty</option>
+          <option>Humor and Comedy</option>
+          <option>Sadness and Compassion</option>
+          <option>Fury and Anger</option>
+          <option>Courage and Heroism</option>
+          <option>Horror and Terror</option>
+          <option>Disgust and Revulsion</option>
+          <option>Wonder and Amazement</option>
+          <option>Peace and Serenity</option>
+        </select>
+
+        <span style={label}>Narrative Framework</span>
+        <select value={narrative} onChange={e => setNarrative(e.target.value)} style={select}>
+          <option>Problem — Solution — Result</option>
+          <option>Before — After — Bridge</option>
+          <option>Hero's Journey</option>
+          <option>Three Act Structure</option>
+          <option>In Medias Res</option>
+          <option>The Revelation</option>
+          <option>The Contrast</option>
+          <option>The Loop</option>
+          <option>False Start</option>
+          <option>The List</option>
+        </select>
+
+        <span style={label}>Type of Conflict</span>
+        <select value={conflict} onChange={e => setConflict(e.target.value)} style={select}>
+          <option>Person vs Self</option>
+          <option>Person vs Person</option>
+          <option>Person vs Society</option>
+          <option>Person vs Nature</option>
+          <option>Person vs Technology</option>
+          <option>Person vs Fate</option>
+          <option>Person vs Unknown</option>
+        </select>
+
+        <span style={label}>Character Archetype</span>
+        <select value={character} onChange={e => setCharacter(e.target.value)} style={select}>
+          <option>The Everyman</option>
+          <option>The Hero</option>
+          <option>The Trickster</option>
+          <option>The Mentor</option>
+          <option>The Rebel</option>
+          <option>The Innocent</option>
+          <option>The Villain</option>
+          <option>The Outcast</option>
+          <option>The Lover</option>
+          <option>No Character — Narrator Only</option>
+        </select>
+
+        <span style={label}>Setting</span>
+        <select value={setting} onChange={e => setSetting(e.target.value)} style={select}>
+          <option>Everyday Life</option>
+          <option>Fantasy World</option>
+          <option>Futuristic</option>
+          <option>Historical</option>
+          <option>Nature and Wilderness</option>
+          <option>Urban City</option>
+          <option>Supernatural</option>
+          <option>Abstract and Surreal</option>
+          <option>Workplace</option>
+          <option>Domestic Home</option>
+        </select>
+
+        <span style={label}>Hook Type</span>
+        <select value={hook} onChange={e => setHook(e.target.value)} style={select}>
+          <option>Question Hook</option>
+          <option>Shocking Statement Hook</option>
+          <option>Story Drop Hook</option>
+          <option>Fact Hook</option>
+          <option>Controversy Hook</option>
+          <option>Relatability Hook</option>
+          <option>Fear Hook</option>
+          <option>Curiosity Gap Hook</option>
+          <option>Challenge Hook</option>
+          <option>Confession Hook</option>
+          <option>Prediction Hook</option>
+          <option>Myth Busting Hook</option>
+          <option>Number Hook</option>
+          <option>Before and After Hook</option>
+          <option>Pain Point Hook</option>
+        </select>
+
+        <span style={label}>Twist or Surprise</span>
+        <select value={twist} onChange={e => setTwist(e.target.value)} style={select}>
+          <option>Unexpected Reversal</option>
+          <option>Hidden Information Revealed</option>
+          <option>Genre Subversion</option>
+          <option>Fourth Wall Break</option>
+          <option>Time Jump</option>
+          <option>Role Reversal</option>
+          <option>No Twist — Straight Narrative</option>
+        </select>
+
+        <span style={label}>Overall Pacing</span>
+        <select value={pacing} onChange={e => setPacing(e.target.value)} style={select}>
+          <option>Slow and Cinematic</option>
+          <option>Medium and Conversational</option>
+          <option>Fast and Punchy</option>
+          <option>Slow Build to Fast Climax</option>
+          <option>Fast Open Slow Close</option>
+          <option>Rhythmic and Musical</option>
+          <option>Erratic and Chaotic</option>
+        </select>
+
+        <span style={label}>Visual Style</span>
+        <select value={visualStyle} onChange={e => setVisualStyle(e.target.value)} style={select}>
+          <option>High Contrast Bold Text</option>
+          <option>Minimal Clean White</option>
+          <option>Dark Moody Cinematic</option>
+          <option>Bright Playful Colourful</option>
+          <option>Vintage and Retro</option>
+          <option>Neon and Cyberpunk</option>
+          <option>Nature and Earthy</option>
+          <option>Black and White</option>
+        </select>
+
+        <span style={label}>Music Mood</span>
+        <select value={musicMood} onChange={e => setMusicMood(e.target.value)} style={select}>
+          <option>Upbeat and Energetic</option>
+          <option>Dark and Tense</option>
+          <option>Emotional and Cinematic</option>
+          <option>Funny and Quirky</option>
+          <option>Lo-Fi and Relaxed</option>
+          <option>Epic and Powerful</option>
+          <option>Silence — No Music</option>
+          <option>Horror Ambient</option>
+          <option>Romantic and Soft</option>
+        </select>
+
+        <span style={label}>Voice Tone</span>
+        <select value={voiceTone} onChange={e => setVoiceTone(e.target.value)} style={select}>
+          <option>Conversational</option>
+          <option>Authoritative</option>
+          <option>Excited and Hyped</option>
+          <option>Calm and Soothing</option>
+          <option>Mysterious and Whispery</option>
+          <option>Comedic</option>
+          <option>Dramatic</option>
+          <option>Robotic and Detached</option>
+          <option>No Voice — Text Only</option>
+        </select>
+
+        <span style={label}>Target Platform</span>
+        <select value={platform} onChange={e => setPlatform(e.target.value)} style={select}>
+          <option>Instagram Reels</option>
+          <option>YouTube Shorts</option>
+          <option>TikTok</option>
+          <option>Facebook Reels</option>
+          <option>LinkedIn Video</option>
+          <option>Twitter/X Video</option>
+          <option>All Platforms</option>
+        </select>
+
+        <span style={label}>Video Length</span>
+        <select value={length} onChange={e => setLength(e.target.value)} style={select}>
+          <option>15 seconds</option>
+          <option>30 seconds</option>
+          <option>45 seconds</option>
+          <option>60 seconds</option>
+          <option>90 seconds</option>
+        </select>
+
+        <span style={label}>Target Audience</span>
+        <select value={audience} onChange={e => setAudience(e.target.value)} style={select}>
+          <option>General Public</option>
+          <option>Children</option>
+          <option>Teenagers</option>
+          <option>Young Adults 18-25</option>
+          <option>Adults 25-40</option>
+          <option>Professionals</option>
+          <option>Entrepreneurs</option>
+          <option>Parents</option>
+          <option>Seniors</option>
+          <option>Niche Community</option>
+        </select>
+
+        <span style={label}>Content Pillar</span>
+        <select value={contentPillar} onChange={e => setContentPillar(e.target.value)} style={select}>
+          <option>Entertainment</option>
+          <option>Education</option>
+          <option>Inspiration</option>
+          <option>Controversy and Opinion</option>
+          <option>Behind the Scenes</option>
+          <option>Storytelling</option>
+          <option>News and Trends</option>
+          <option>Humour and Satire</option>
+          <option>Horror and Thriller</option>
+          <option>Romance and Emotion</option>
+        </select>
+
+        <span style={label}>Call To Action</span>
+        <select value={cta} onChange={e => setCta(e.target.value)} style={select}>
+          <option>Follow For More</option>
+          <option>Comment Your Thoughts</option>
+          <option>Share With Someone Who Needs This</option>
+          <option>Save This Video</option>
+          <option>Tag a Friend</option>
+          <option>Visit Link in Bio</option>
+          <option>Answer This Question</option>
+          <option>Duet or Stitch This</option>
+          <option>No Call To Action</option>
+        </select>
+
         {error && (
-          <div style={{padding:'16px',backgroundColor:'#3a1a1a',border:'1px solid #ff4444',borderRadius:'8px',marginBottom:'20px',color:'#ff4444'}}>
+          <div style={{padding:'16px',backgroundColor:'#3a1a1a',border:'1px solid #ff4444',borderRadius:'8px',marginTop:'20px',color:'#ff4444'}}>
             {error}
           </div>
         )}
@@ -163,7 +365,7 @@ CAPTION FOR POST:
         <button
           onClick={handleGenerate}
           disabled={loading}
-          style={{display:'block',width:'100%',padding:'20px',backgroundColor:loading?'#888':'#ff6b35',border:'none',borderRadius:'10px',color:'white',fontSize:'20px',fontWeight:'bold',cursor:loading?'not-allowed':'pointer',letterSpacing:'1px',marginTop:'10px'}}
+          style={{display:'block',width:'100%',padding:'20px',backgroundColor:loading?'#555':'#ff6b35',border:'none',borderRadius:'10px',color:'white',fontSize:'20px',fontWeight:'bold',cursor:loading?'not-allowed':'pointer',letterSpacing:'1px',marginTop:'24px'}}
         >
           {loading ? 'Generating Your Script...' : 'Generate Video'}
         </button>
