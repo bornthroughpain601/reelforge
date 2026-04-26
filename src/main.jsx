@@ -54,7 +54,7 @@ function App() {
           'Authorization': 'Bearer ' + key
         },
         body: JSON.stringify({
-          model: 'compound-beta',
+          model: 'compound-bet',
           messages: [{ role: 'user', content: prompt }],
           max_tokens: 1000
         })
