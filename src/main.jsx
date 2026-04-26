@@ -1,108 +1,12 @@
- import React, { useState } from 'react'
-import ReactDOM from 'react-dom/client'
-
-function App() {
-  const [topic, setTopic] = useState('')
-  const [style, setStyle] = useState('Doodle Animation')
-  const [emotion, setEmotion] = useState('Humor and Comedy')
-  const [audience, setAudience] = useState('General Public')
-  const [length, setLength] = useState('30 seconds')
-  const [pacing, setPacing] = useState('Fast and Punchy')
-  const [hook, setHook] = useState('Question Hook')
-  const [narrative, setNarrative] = useState('Problem — Solution — Result')
-  const [conflict, setConflict] = useState('Person vs Self')
-  const [character, setCharacter] = useState('The Everyman')
-  const [setting, setSetting] = useState('Everyday Life')
-  const [twist, setTwist] = useState('Unexpected Reversal')
-  const [visualStyle, setVisualStyle] = useState('High Contrast Bold Text')
-  const [musicMood, setMusicMood] = useState('Upbeat and Energetic')
-  const [voiceTone, setVoiceTone] = useState('Conversational')
-  const [platform, setPlatform] = useState('Instagram Reels')
-  const [cta, setCta] = useState('Follow For More')
-  const [contentPillar, setContentPillar] = useState('Entertainment')
-  const [script, setScript] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-
-  const label = {
-    color:'#ff6b35',fontWeight:'bold',fontSize:'13px',
-    letterSpacing:'2px',textTransform:'uppercase',
-    display:'block',marginBottom:'8px',marginTop:'20px'
-  }
-
-  const select = {
-    display:'block',width:'100%',padding:'11px',
-    backgroundColor:'#2a2a2a',border:'1px solid #444',
-    borderRadius:'8px',color:'white',fontSize:'14px',marginBottom:'4px'
-  }
-
-  const handleGenerate = async () => {
-    if (!topic.trim()) {
-      setError('Please enter a topic or story first.')
-      return
-    }
-    setLoading(true)
-    setError('')
-    setScript('')
-
-    const prompt = `You are a world class short form video script writer.
-
-Generate a complete video script based on these parameters:
-STORY: ${topic}
-ANIMATION STYLE: ${style}
-EMOTION: ${emotion}
-NARRATIVE: ${narrative}
-CONFLICT: ${conflict}
-CHARACTER: ${character}
-SETTING: ${setting}
-HOOK: ${hook}
-TWIST: ${twist}
-PACING: ${pacing}
-VISUAL STYLE: ${visualStyle}
-MUSIC: ${musicMood}
-VOICE: ${voiceTone}
-AUDIENCE: ${audience}
-PLATFORM: ${platform}
-LENGTH: ${length}
-CONTENT PILLAR: ${contentPillar}
-CALL TO ACTION: ${cta}
-
-Write the script in this format:
-
-TITLE: [Catchy video title]
-
-HOOK: [Opening line and visual]
-
-SCENE 1: [Visual + Voiceover]
-
-SCENE 2: [Visual + Voiceover]
-
-SCENE 3: [Visual + Voiceover]
-
-CLIMAX: [Peak moment]
-
-RESOLUTION: [Ending]
-
-CALL TO ACTION: [Exact CTA text]
-
-CAPTION: [Full social media caption with hashtags]`
-
-    try {
-      const res = await fetch(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + import.meta.env.VITE_GEMINI_API_KEY,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }]
-          })
-        }
-      )
-      const data = await res.json()
+ if (data.error) {
+        setError('API Error: ' + data.error.message)
+        setLoading(false)
+        return
+      }
       const text = data.candidates[0].content.parts[0].text
       setScript(text)
     } catch (err) {
-      setError('Something went wrong. Please try again.')
+      setError('Error: ' + err.message)
     }
     setLoading(false)
   }
