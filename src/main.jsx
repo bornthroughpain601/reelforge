@@ -54,7 +54,7 @@ function App() {
           'Authorization': 'Bearer ' + key
         },
         body: JSON.stringify({
-          model: 'llama3-70lb-8192',
+          model: 'compound-beta',
           messages: [{ role: 'user', content: prompt }],
           max_tokens: 1000
         })
