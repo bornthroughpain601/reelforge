@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import ReactDOM from 'react-dom/client'
 
 function App() {
@@ -24,13 +24,7 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [speaking, setSpeaking] = useState(false)
-
-  useEffect(() => {
-    const script = document.createElement('script')
-    script.src = 'https://js.puter.com/v2/'
-    script.async = true
-    document.head.appendChild(script)
-  }, [])
+  const [audioUrl, setAudioUrl] = useState(null)
 
   const label = {
     color:'#ff6b35',fontWeight:'bold',fontSize:'13px',
@@ -60,23 +54,50 @@ function App() {
       .slice(0, 2000)
   }
 
+  const getVoiceId = () => {
+    switch(emotion) {
+      case 'Horror and Terror': return 'onwK4e9ZLuTAKqWW03F9'
+      case 'Love and Beauty': return 'EXAVITQu4vr4xnSDxMaL'
+      case 'Courage and Heroism': return 'TxGEqnHWrfWFTfGW9XjX'
+      case 'Fury and Anger': return 'onwK4e9ZLuTAKqWW03F9'
+      case 'Sadness and Compassion': return 'EXAVITQu4vr4xnSDxMaL'
+      case 'Wonder and Amazement': return 'pNInz6obpgDQGcFmaJgB'
+      case 'Humor and Comedy': return 'pNInz6obpgDQGcFmaJgB'
+      default: return 'pNInz6obpgDQGcFmaJgB'
+    }
+  }
+
   const speakScript = async (text) => {
     try {
       setSpeaking(true)
+      setError('')
       const voiceText = extractVoiceLines(text)
-      const voice = emotion === 'Horror and Terror' ? 'Matthew' :
-                    emotion === 'Love and Beauty' ? 'Joanna' :
-                    emotion === 'Courage and Heroism' ? 'Brian' :
-                    emotion === 'Humor and Comedy' ? 'Salli' :
-                    emotion === 'Sadness and Compassion' ? 'Kendra' : 'Joanna'
-      const engine = 'neural'
-      if (window.puter) {
-        const audio = await window.puter.ai.txt2speech(voiceText, { voice, engine })
-        audio.onended = () => setSpeaking(false)
-        audio.play()
-      } else {
-        throw new Error('Puter not loaded yet')
+      const voiceId = getVoiceId()
+      const res = await fetch('https://api.elevenlabs.io/v1/text-to-speech/' + voiceId, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'xi-api-key': import.meta.env.VITE_ELEVENLABS_API_KEY
+        },
+        body: JSON.stringify({
+          text: voiceText,
+          model_id: 'eleven_monolingual_v1',
+          voice_settings: {
+            stability: 0.5,
+            similarity_boost: 0.75
+          }
+        })
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.detail?.message || 'Voice generation failed')
       }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      setAudioUrl(url)
+      const audio = new Audio(url)
+      audio.onended = () => setSpeaking(false)
+      audio.play()
     } catch (e) {
       setSpeaking(false)
       setError('Voice error: ' + e.message)
@@ -97,6 +118,7 @@ function App() {
     setLoading(true)
     setError('')
     setScript('')
+    setAudioUrl(null)
 
     const key = import.meta.env.VITE_GEMINI_API_KEY
     const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + key
@@ -363,7 +385,7 @@ function App() {
                 disabled={speaking}
                 style={{padding:'12px 24px',backgroundColor:speaking?'#555':'#ff6b35',border:'none',borderRadius:'8px',color:'white',fontSize:'15px',fontWeight:'bold',cursor:speaking?'not-allowed':'pointer'}}
               >
-                {speaking ? '🔊 Speaking...' : '▶ Play Voiceover'}
+                {speaking ? '🔊 Generating Voice...' : '▶ Play Voiceover'}
               </button>
               <button
                 onClick={stopSpeaking}
@@ -371,6 +393,15 @@ function App() {
               >
                 ⏹ Stop
               </button>
+              {audioUrl && (
+                
+                  href={audioUrl}
+                  download="reelforge-voiceover.mp3"
+                  style={{padding:'12px 24px',backgroundColor:'#1a3a1a',border:'1px solid #4caf50',borderRadius:'8px',color:'#4caf50',fontSize:'15px',cursor:'pointer',textDecoration:'none'}}
+                >
+                  ⬇ Download Audio
+                </a>
+              )}
             </div>
             <pre style={{whiteSpace:'pre-wrap',fontFamily:'Arial, sans-serif',fontSize:'14px',lineHeight:'1.8',color:'#ddd',margin:0}}>
               {script}
