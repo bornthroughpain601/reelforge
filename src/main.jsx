@@ -55,16 +55,12 @@ function App() {
   }
 
   const getVoiceId = () => {
-    switch(emotion) {
-      case 'Horror and Terror': return 'onwK4e9ZLuTAKqWW03F9'
-      case 'Love and Beauty': return 'EXAVITQu4vr4xnSDxMaL'
-      case 'Courage and Heroism': return 'TxGEqnHWrfWFTfGW9XjX'
-      case 'Fury and Anger': return 'onwK4e9ZLuTAKqWW03F9'
-      case 'Sadness and Compassion': return 'EXAVITQu4vr4xnSDxMaL'
-      case 'Wonder and Amazement': return 'pNInz6obpgDQGcFmaJgB'
-      case 'Humor and Comedy': return 'pNInz6obpgDQGcFmaJgB'
-      default: return 'pNInz6obpgDQGcFmaJgB'
-    }
+    if (emotion === 'Horror and Terror') return 'onwK4e9ZLuTAKqWW03F9'
+    if (emotion === 'Love and Beauty') return 'EXAVITQu4vr4xnSDxMaL'
+    if (emotion === 'Courage and Heroism') return 'TxGEqnHWrfWFTfGW9XjX'
+    if (emotion === 'Fury and Anger') return 'onwK4e9ZLuTAKqWW03F9'
+    if (emotion === 'Sadness and Compassion') return 'EXAVITQu4vr4xnSDxMaL'
+    return 'pNInz6obpgDQGcFmaJgB'
   }
 
   const speakScript = async (text) => {
@@ -82,15 +78,12 @@ function App() {
         body: JSON.stringify({
           text: voiceText,
           model_id: 'eleven_monolingual_v1',
-          voice_settings: {
-            stability: 0.5,
-            similarity_boost: 0.75
-          }
+          voice_settings: { stability: 0.5, similarity_boost: 0.75 }
         })
       })
       if (!res.ok) {
         const err = await res.json()
-        throw new Error(err.detail?.message || 'Voice generation failed')
+        throw new Error(err.detail ? err.detail.message : 'Voice generation failed')
       }
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
@@ -102,12 +95,6 @@ function App() {
       setSpeaking(false)
       setError('Voice error: ' + e.message)
     }
-  }
-
-  const stopSpeaking = () => {
-    setSpeaking(false)
-    const audios = document.querySelectorAll('audio')
-    audios.forEach(a => { a.pause(); a.currentTime = 0 })
   }
 
   const handleGenerate = async () => {
@@ -122,7 +109,6 @@ function App() {
 
     const key = import.meta.env.VITE_GEMINI_API_KEY
     const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + key
-
     const prompt = 'You are a world class short form video script writer. Generate a complete video script. STORY: ' + topic + ' STYLE: ' + style + ' EMOTION: ' + emotion + ' NARRATIVE: ' + narrative + ' CONFLICT: ' + conflict + ' CHARACTER: ' + character + ' SETTING: ' + setting + ' HOOK: ' + hook + ' TWIST: ' + twist + ' PACING: ' + pacing + ' VISUAL: ' + visualStyle + ' MUSIC: ' + musicMood + ' VOICE: ' + voiceTone + ' AUDIENCE: ' + audience + ' PLATFORM: ' + platform + ' LENGTH: ' + length + ' PILLAR: ' + contentPillar + ' CTA: ' + cta + ' Write the script with: TITLE, HOOK, SCENE 1, SCENE 2, SCENE 3, CLIMAX, RESOLUTION, CALL TO ACTION, CAPTION with hashtags. Include VO: lines for every scene.'
 
     try {
@@ -385,21 +371,20 @@ function App() {
                 disabled={speaking}
                 style={{padding:'12px 24px',backgroundColor:speaking?'#555':'#ff6b35',border:'none',borderRadius:'8px',color:'white',fontSize:'15px',fontWeight:'bold',cursor:speaking?'not-allowed':'pointer'}}
               >
-                {speaking ? '🔊 Generating Voice...' : '▶ Play Voiceover'}
+                {speaking ? 'Generating Voice...' : 'Play Voiceover'}
               </button>
               <button
-                onClick={stopSpeaking}
+                onClick={() => setSpeaking(false)}
                 style={{padding:'12px 24px',backgroundColor:'#333',border:'1px solid #555',borderRadius:'8px',color:'white',fontSize:'15px',cursor:'pointer'}}
               >
-                ⏹ Stop
+                Stop
               </button>
               {audioUrl && (
                 
                   href={audioUrl}
-                  download="reelforge-voiceover.mp3"
                   style={{padding:'12px 24px',backgroundColor:'#1a3a1a',border:'1px solid #4caf50',borderRadius:'8px',color:'#4caf50',fontSize:'15px',cursor:'pointer',textDecoration:'none'}}
                 >
-                  ⬇ Download Audio
+                  Download Audio
                 </a>
               )}
             </div>
