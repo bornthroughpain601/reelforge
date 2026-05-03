@@ -24,7 +24,6 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [speaking, setSpeaking] = useState(false)
-  const [audioUrl, setAudioUrl] = useState(null)
 
   const label = {
     color:'#ff6b35',fontWeight:'bold',fontSize:'13px',
@@ -87,7 +86,6 @@ function App() {
       }
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
-      setAudioUrl(url)
       const audio = new Audio(url)
       audio.onended = () => setSpeaking(false)
       audio.play()
@@ -105,7 +103,6 @@ function App() {
     setLoading(true)
     setError('')
     setScript('')
-    setAudioUrl(null)
 
     const key = import.meta.env.VITE_GEMINI_API_KEY
     const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + key
@@ -379,14 +376,6 @@ function App() {
               >
                 Stop
               </button>
-              {audioUrl && (
-                
-                  href={audioUrl}
-                  style={{padding:'12px 24px',backgroundColor:'#1a3a1a',border:'1px solid #4caf50',borderRadius:'8px',color:'#4caf50',fontSize:'15px',cursor:'pointer',textDecoration:'none'}}
-                >
-                  Download Audio
-                </a>
-              )}
             </div>
             <pre style={{whiteSpace:'pre-wrap',fontFamily:'Arial, sans-serif',fontSize:'14px',lineHeight:'1.8',color:'#ddd',margin:0}}>
               {script}
