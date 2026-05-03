@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import ReactDOM from 'react-dom/client'
 
 function App() {
@@ -24,6 +24,15 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [speaking, setSpeaking] = useState(false)
+  const [puterReady, setPuterReady] = useState(false)
+
+  useEffect(() => {
+    const script = document.createElement('script')
+    script.src = 'https://js.puter.com/v2/'
+    script.async = true
+    script.onload = () => setPuterReady(true)
+    document.head.appendChild(script)
+  }, [])
 
   const label = {
     color:'#ff6b35',fontWeight:'bold',fontSize:'13px',
@@ -53,40 +62,30 @@ function App() {
       .slice(0, 2000)
   }
 
-  const getVoiceId = () => {
-    if (emotion === 'Horror and Terror') return 'onwK4e9ZLuTAKqWW03F9'
-    if (emotion === 'Love and Beauty') return 'EXAVITQu4vr4xnSDxMaL'
-    if (emotion === 'Courage and Heroism') return 'TxGEqnHWrfWFTfGW9XjX'
-    if (emotion === 'Fury and Anger') return 'onwK4e9ZLuTAKqWW03F9'
-    if (emotion === 'Sadness and Compassion') return 'EXAVITQu4vr4xnSDxMaL'
-    return 'pNInz6obpgDQGcFmaJgB'
+  const getVoiceForEmotion = () => {
+    if (emotion === 'Horror and Terror') return { voice: 'Matthew', engine: 'neural' }
+    if (emotion === 'Love and Beauty') return { voice: 'Joanna', engine: 'neural' }
+    if (emotion === 'Courage and Heroism') return { voice: 'Joey', engine: 'neural' }
+    if (emotion === 'Fury and Anger') return { voice: 'Matthew', engine: 'neural' }
+    if (emotion === 'Sadness and Compassion') return { voice: 'Joanna', engine: 'neural' }
+    if (emotion === 'Humor and Comedy') return { voice: 'Justin', engine: 'neural' }
+    if (emotion === 'Wonder and Amazement') return { voice: 'Ivy', engine: 'neural' }
+    if (emotion === 'Peace and Serenity') return { voice: 'Salli', engine: 'neural' }
+    if (emotion === 'Disgust and Revulsion') return { voice: 'Kevin', engine: 'neural' }
+    return { voice: 'Joanna', engine: 'neural' }
   }
 
   const speakScript = async (text) => {
+    if (!puterReady) {
+      setError('Voice engine is still loading. Please wait a moment and try again.')
+      return
+    }
     try {
       setSpeaking(true)
       setError('')
       const voiceText = extractVoiceLines(text)
-      const voiceId = getVoiceId()
-      const res = await fetch('https://api.elevenlabs.io/v1/text-to-speech/' + voiceId, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'xi-api-key': import.meta.env.VITE_ELEVENLABS_API_KEY
-        },
-        body: JSON.stringify({
-          text: voiceText,
-          model_id: 'eleven_turbo_v2_5',
-          voice_settings: { stability: 0.5, similarity_boost: 0.75 }
-        })
-      })
-      if (!res.ok) {
-        const err = await res.json()
-        throw new Error(err.detail ? err.detail.message : 'Voice generation failed')
-      }
-      const blob = await res.blob()
-      const url = URL.createObjectURL(blob)
-      const audio = new Audio(url)
+      const { voice, engine } = getVoiceForEmotion()
+      const audio = await window.puter.ai.txt2speech(voiceText, { voice, engine, language: 'en-US' })
       audio.onended = () => setSpeaking(false)
       audio.play()
     } catch (e) {
@@ -371,7 +370,7 @@ function App() {
                 {speaking ? 'Generating Voice...' : 'Play Voiceover'}
               </button>
               <button
-                onClick={() => setSpeaking(false)}
+                onClick={() => { window.speechSynthesis && window.speechSynthesis.cancel(); setSpeaking(false) }}
                 style={{padding:'12px 24px',backgroundColor:'#333',border:'1px solid #555',borderRadius:'8px',color:'white',fontSize:'15px',cursor:'pointer'}}
               >
                 Stop
