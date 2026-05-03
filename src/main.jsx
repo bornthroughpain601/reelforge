@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import ReactDOM from 'react-dom/client'
 
 function App() {
@@ -25,6 +25,13 @@ function App() {
   const [error, setError] = useState('')
   const [speaking, setSpeaking] = useState(false)
 
+  useEffect(() => {
+    const script = document.createElement('script')
+    script.src = 'https://js.puter.com/v2/'
+    script.async = true
+    document.head.appendChild(script)
+  }, [])
+
   const label = {
     color:'#ff6b35',fontWeight:'bold',fontSize:'13px',
     letterSpacing:'2px',textTransform:'uppercase',
@@ -37,25 +44,49 @@ function App() {
     borderRadius:'8px',color:'white',fontSize:'14px',marginBottom:'4px'
   }
 
-  const speakScript = (text) => {
-    if (!window.speechSynthesis) return
-    window.speechSynthesis.cancel()
-    const lines = text.match(/\*\*VO:\*\*.*|VO:.*|VOICE:.*|"([^"]+)"/g) || []
-    const voiceText = lines.length > 0
-      ? lines.map(l => l.replace(/\*\*VO:\*\*|\*\*VOICE:\*\*|VO:|VOICE:|"/g, '').trim()).join(' ')
-      : text.replace(/\*\*.*?\*\*|#{1,3}.*?\n|\(.*?\)|\[.*?\]/g, '').trim()
-    const utterance = new SpeechSynthesisUtterance(voiceText)
-    utterance.rate = voiceTone === 'Fast and Punchy' ? 1.3 : voiceTone === 'Slow and Cinematic' ? 0.8 : 1.0
-    utterance.pitch = emotion === 'Humor and Comedy' ? 1.2 : emotion === 'Horror and Terror' ? 0.7 : 1.0
-    utterance.volume = 1
-    utterance.onstart = () => setSpeaking(true)
-    utterance.onend = () => setSpeaking(false)
-    window.speechSynthesis.speak(utterance)
+  const extractVoiceLines = (text) => {
+    const voLines = text.match(/VO:([^\n]+)/g) || []
+    if (voLines.length > 0) {
+      return voLines.map(l => l.replace(/\*?\*?VO:\*?\*?/, '').replace(/"/g, '').trim()).join(' ')
+    }
+    return text
+      .replace(/\*\*.*?\*\*/g, '')
+      .replace(/#{1,3}[^\n]*/g, '')
+      .replace(/\(.*?\)/g, '')
+      .replace(/\[.*?\]/g, '')
+      .replace(/---/g, '')
+      .replace(/\n+/g, ' ')
+      .trim()
+      .slice(0, 2000)
+  }
+
+  const speakScript = async (text) => {
+    try {
+      setSpeaking(true)
+      const voiceText = extractVoiceLines(text)
+      const voice = emotion === 'Horror and Terror' ? 'Matthew' :
+                    emotion === 'Love and Beauty' ? 'Joanna' :
+                    emotion === 'Courage and Heroism' ? 'Brian' :
+                    emotion === 'Humor and Comedy' ? 'Salli' :
+                    emotion === 'Sadness and Compassion' ? 'Kendra' : 'Joanna'
+      const engine = 'neural'
+      if (window.puter) {
+        const audio = await window.puter.ai.txt2speech(voiceText, { voice, engine })
+        audio.onended = () => setSpeaking(false)
+        audio.play()
+      } else {
+        throw new Error('Puter not loaded yet')
+      }
+    } catch (e) {
+      setSpeaking(false)
+      setError('Voice error: ' + e.message)
+    }
   }
 
   const stopSpeaking = () => {
-    window.speechSynthesis.cancel()
     setSpeaking(false)
+    const audios = document.querySelectorAll('audio')
+    audios.forEach(a => { a.pause(); a.currentTime = 0 })
   }
 
   const handleGenerate = async () => {
@@ -66,7 +97,6 @@ function App() {
     setLoading(true)
     setError('')
     setScript('')
-    window.speechSynthesis && window.speechSynthesis.cancel()
 
     const key = import.meta.env.VITE_GEMINI_API_KEY
     const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + key
@@ -327,19 +357,19 @@ function App() {
         {script && (
           <div style={{marginTop:'32px',padding:'28px',backgroundColor:'#2a2a2a',borderRadius:'12px',border:'1px solid #ff6b35'}}>
             <h3 style={{margin:'0 0 16px 0',color:'#ff6b35'}}>Your Generated Script</h3>
-            <div style={{display:'flex',gap:'12px',marginBottom:'20px'}}>
+            <div style={{display:'flex',gap:'12px',marginBottom:'20px',flexWrap:'wrap'}}>
               <button
                 onClick={() => speakScript(script)}
                 disabled={speaking}
                 style={{padding:'12px 24px',backgroundColor:speaking?'#555':'#ff6b35',border:'none',borderRadius:'8px',color:'white',fontSize:'15px',fontWeight:'bold',cursor:speaking?'not-allowed':'pointer'}}
               >
-                {speaking ? 'Speaking...' : 'Play Voiceover'}
+                {speaking ? '🔊 Speaking...' : '▶ Play Voiceover'}
               </button>
               <button
                 onClick={stopSpeaking}
                 style={{padding:'12px 24px',backgroundColor:'#333',border:'1px solid #555',borderRadius:'8px',color:'white',fontSize:'15px',cursor:'pointer'}}
               >
-                Stop
+                ⏹ Stop
               </button>
             </div>
             <pre style={{whiteSpace:'pre-wrap',fontFamily:'Arial, sans-serif',fontSize:'14px',lineHeight:'1.8',color:'#ddd',margin:0}}>
