@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import ReactDOM from 'react-dom/client'
 
 function App() {
@@ -24,13 +24,6 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [speaking, setSpeaking] = useState(false)
-
-  useEffect(() => {
-    const s = document.createElement('script')
-    s.src = 'https://js.puter.com/v2/'
-    s.async = true
-    document.head.appendChild(s)
-  }, [])
 
   const label = {
     color:'#ff6b35',fontWeight:'bold',fontSize:'13px',
@@ -60,23 +53,19 @@ function App() {
       .slice(0, 2000)
   }
 
-  const speakScript = async (text) => {
+  const speakScript = (text) => {
     try {
       setSpeaking(true)
       setError('')
+      window.speechSynthesis.cancel()
       const voiceText = extractVoiceLines(text)
-      const voice = emotion === 'Horror and Terror' ? 'Matthew' :
-                    emotion === 'Love and Beauty' ? 'Joanna' :
-                    emotion === 'Courage and Heroism' ? 'Brian' :
-                    emotion === 'Humor and Comedy' ? 'Salli' :
-                    emotion === 'Sadness and Compassion' ? 'Kendra' : 'Joanna'
-      if (window.puter) {
-        const audio = await window.puter.ai.txt2speech(voiceText, { voice, engine: 'neural' })
-        audio.onended = () => setSpeaking(false)
-        audio.play()
-      } else {
-        throw new Error('Voice engine not loaded yet. Please try again in a moment.')
-      }
+      const utterance = new SpeechSynthesisUtterance(voiceText)
+      utterance.rate = pacing === 'Fast and Punchy' ? 1.3 : pacing === 'Slow and Cinematic' ? 0.8 : 1.0
+      utterance.pitch = emotion === 'Humor and Comedy' ? 1.2 : emotion === 'Horror and Terror' ? 0.6 : emotion === 'Fury and Anger' ? 1.4 : emotion === 'Peace and Serenity' ? 0.9 : 1.0
+      utterance.volume = 1
+      utterance.onend = () => setSpeaking(false)
+      utterance.onerror = () => setSpeaking(false)
+      window.speechSynthesis.speak(utterance)
     } catch (e) {
       setSpeaking(false)
       setError('Voice error: ' + e.message)
@@ -84,9 +73,8 @@ function App() {
   }
 
   const stopSpeaking = () => {
+    window.speechSynthesis.cancel()
     setSpeaking(false)
-    const audios = document.querySelectorAll('audio')
-    audios.forEach(a => { a.pause(); a.currentTime = 0 })
   }
 
   const handleGenerate = async () => {
@@ -97,6 +85,7 @@ function App() {
     setLoading(true)
     setError('')
     setScript('')
+    window.speechSynthesis.cancel()
 
     const key = import.meta.env.VITE_GEMINI_API_KEY
     const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + key
