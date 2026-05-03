@@ -24,6 +24,8 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [speaking, setSpeaking] = useState(false)
+  const [videoUrl, setVideoUrl] = useState(null)
+  const [generatingVideo, setGeneratingVideo] = useState(false)
 
   const label = {
     color:'#ff6b35',fontWeight:'bold',fontSize:'13px',
@@ -35,6 +37,37 @@ function App() {
     display:'block',width:'100%',padding:'11px',
     backgroundColor:'#2a2a2a',border:'1px solid #444',
     borderRadius:'8px',color:'white',fontSize:'14px',marginBottom:'4px'
+  }
+
+  const getStylePrompt = () => {
+    if (style === 'Doodle Animation') return 'hand drawn doodle animation style, whiteboard sketch, simple line art characters'
+    if (style === 'Cartoon Characters') return 'colorful cartoon animation style, animated characters, bright vivid colors, Pixar style'
+    if (style === 'Realistic Cinematic') return 'cinematic realistic style, film quality, dramatic lighting, photorealistic'
+    if (style === 'Whiteboard Explainer') return 'whiteboard animation, hand drawn on white background, marker drawing style'
+    if (style === 'Motion Graphics') return 'motion graphics, clean modern design, animated text and shapes, professional'
+    if (style === 'Stop Motion') return 'stop motion claymation style, clay figures, textured surfaces, warm studio lighting'
+    if (style === 'Typographic') return 'typographic animation, bold text on dark background, kinetic typography'
+    return 'mixed media animation style, creative visual composition'
+  }
+
+  const getEmotionPrompt = () => {
+    if (emotion === 'Horror and Terror') return 'dark horror atmosphere, eerie lighting, suspenseful'
+    if (emotion === 'Humor and Comedy') return 'funny lighthearted upbeat cheerful comedic'
+    if (emotion === 'Love and Beauty') return 'romantic warm soft beautiful elegant'
+    if (emotion === 'Fury and Anger') return 'intense dramatic high energy powerful'
+    if (emotion === 'Courage and Heroism') return 'epic heroic inspiring triumphant'
+    if (emotion === 'Sadness and Compassion') return 'emotional touching melancholic tender'
+    if (emotion === 'Wonder and Amazement') return 'magical wondrous spectacular awe inspiring'
+    if (emotion === 'Peace and Serenity') return 'calm peaceful serene tranquil'
+    return 'expressive dynamic engaging'
+  }
+
+  const extractSceneDescription = (scriptText) => {
+    const scenes = scriptText.match(/VISUAL:([^\n]+)/g) || []
+    if (scenes.length > 0) {
+      return scenes.slice(0, 3).map(s => s.replace('VISUAL:', '').trim()).join('. ')
+    }
+    return topic.slice(0, 200)
   }
 
   const extractVoiceLines = (text) => {
@@ -61,7 +94,7 @@ function App() {
       const voiceText = extractVoiceLines(text)
       const utterance = new SpeechSynthesisUtterance(voiceText)
       utterance.rate = pacing === 'Fast and Punchy' ? 1.3 : pacing === 'Slow and Cinematic' ? 0.8 : 1.0
-      utterance.pitch = emotion === 'Humor and Comedy' ? 1.2 : emotion === 'Horror and Terror' ? 0.6 : emotion === 'Fury and Anger' ? 1.4 : emotion === 'Peace and Serenity' ? 0.9 : 1.0
+      utterance.pitch = emotion === 'Humor and Comedy' ? 1.2 : emotion === 'Horror and Terror' ? 0.6 : 1.0
       utterance.volume = 1
       utterance.onend = () => setSpeaking(false)
       utterance.onerror = () => setSpeaking(false)
@@ -77,6 +110,37 @@ function App() {
     setSpeaking(false)
   }
 
+  const generateVideo = async (scriptText) => {
+    setGeneratingVideo(true)
+    setVideoUrl(null)
+    setError('')
+    try {
+      const sceneDescription = extractSceneDescription(scriptText)
+      const stylePrompt = getStylePrompt()
+      const emotionPrompt = getEmotionPrompt()
+      const videoPrompt = stylePrompt + ', ' + emotionPrompt + ', ' + sceneDescription + ', short form social media video, vertical 9:16 aspect ratio'
+      const res = await fetch('https://zsky.ai/api/v1/video/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: videoPrompt,
+          duration: 5,
+          resolution: '1080p',
+          audio: true
+        })
+      })
+      if (!res.ok) {
+        throw new Error('Video generation failed. Status: ' + res.status)
+      }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      setVideoUrl(url)
+    } catch (e) {
+      setError('Video error: ' + e.message)
+    }
+    setGeneratingVideo(false)
+  }
+
   const handleGenerate = async () => {
     if (!topic.trim()) {
       setError('Please enter a topic or story first.')
@@ -85,11 +149,12 @@ function App() {
     setLoading(true)
     setError('')
     setScript('')
+    setVideoUrl(null)
     window.speechSynthesis.cancel()
 
     const key = import.meta.env.VITE_GEMINI_API_KEY
     const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + key
-    const prompt = 'You are a world class short form video script writer. Generate a complete video script. STORY: ' + topic + ' STYLE: ' + style + ' EMOTION: ' + emotion + ' NARRATIVE: ' + narrative + ' CONFLICT: ' + conflict + ' CHARACTER: ' + character + ' SETTING: ' + setting + ' HOOK: ' + hook + ' TWIST: ' + twist + ' PACING: ' + pacing + ' VISUAL: ' + visualStyle + ' MUSIC: ' + musicMood + ' VOICE: ' + voiceTone + ' AUDIENCE: ' + audience + ' PLATFORM: ' + platform + ' LENGTH: ' + length + ' PILLAR: ' + contentPillar + ' CTA: ' + cta + ' Write the script with: TITLE, HOOK, SCENE 1, SCENE 2, SCENE 3, CLIMAX, RESOLUTION, CALL TO ACTION, CAPTION with hashtags. Include VO: lines for every scene.'
+    const prompt = 'You are a world class short form video script writer. Generate a complete video script. STORY: ' + topic + ' STYLE: ' + style + ' EMOTION: ' + emotion + ' NARRATIVE: ' + narrative + ' CONFLICT: ' + conflict + ' CHARACTER: ' + character + ' SETTING: ' + setting + ' HOOK: ' + hook + ' TWIST: ' + twist + ' PACING: ' + pacing + ' VISUAL: ' + visualStyle + ' MUSIC: ' + musicMood + ' VOICE: ' + voiceTone + ' AUDIENCE: ' + audience + ' PLATFORM: ' + platform + ' LENGTH: ' + length + ' PILLAR: ' + contentPillar + ' CTA: ' + cta + ' Write the script with: TITLE, HOOK, SCENE 1, SCENE 2, SCENE 3, CLIMAX, RESOLUTION, CALL TO ACTION, CAPTION with hashtags. Include VO: lines and VISUAL: descriptions for every scene.'
 
     try {
       const res = await fetch(url, {
@@ -105,6 +170,7 @@ function App() {
       } else {
         const text = data.candidates[0].content.parts[0].text
         setScript(text)
+        await generateVideo(text)
       }
     } catch (e) {
       setError('Error: ' + e.message)
@@ -337,13 +403,28 @@ function App() {
         )}
         <button
           onClick={handleGenerate}
-          disabled={loading}
-          style={{display:'block',width:'100%',padding:'20px',backgroundColor:loading?'#555':'#ff6b35',border:'none',borderRadius:'10px',color:'white',fontSize:'20px',fontWeight:'bold',cursor:loading?'not-allowed':'pointer',letterSpacing:'1px',marginTop:'24px'}}
+          disabled={loading || generatingVideo}
+          style={{display:'block',width:'100%',padding:'20px',backgroundColor:loading||generatingVideo?'#555':'#ff6b35',border:'none',borderRadius:'10px',color:'white',fontSize:'20px',fontWeight:'bold',cursor:loading||generatingVideo?'not-allowed':'pointer',letterSpacing:'1px',marginTop:'24px'}}
         >
-          {loading ? 'Generating Your Script...' : 'Generate Video'}
+          {loading ? 'Writing Script...' : generatingVideo ? 'Generating Video...' : 'Generate Video'}
         </button>
-        {script && (
+        {generatingVideo && (
+          <div style={{marginTop:'20px',padding:'20px',backgroundColor:'#2a2a2a',borderRadius:'8px',textAlign:'center'}}>
+            <p style={{color:'#ff6b35',margin:0}}>Generating your video... This takes about 30 seconds.</p>
+          </div>
+        )}
+        {videoUrl && (
           <div style={{marginTop:'32px',padding:'28px',backgroundColor:'#2a2a2a',borderRadius:'12px',border:'1px solid #ff6b35'}}>
+            <h3 style={{margin:'0 0 16px 0',color:'#ff6b35'}}>Your Generated Video</h3>
+            <video
+              src={videoUrl}
+              controls
+              style={{width:'100%',borderRadius:'8px',marginBottom:'16px'}}
+            />
+          </div>
+        )}
+        {script && (
+          <div style={{marginTop:'32px',padding:'28px',backgroundColor:'#2a2a2a',borderRadius:'12px',border:'1px solid #333'}}>
             <h3 style={{margin:'0 0 16px 0',color:'#ff6b35'}}>Your Generated Script</h3>
             <div style={{display:'flex',gap:'12px',marginBottom:'20px',flexWrap:'wrap'}}>
               <button
