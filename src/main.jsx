@@ -23,6 +23,7 @@ function App() {
   const [script, setScript] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [speaking, setSpeaking] = useState(false)
 
   const label = {
     color:'#ff6b35',fontWeight:'bold',fontSize:'13px',
@@ -36,6 +37,27 @@ function App() {
     borderRadius:'8px',color:'white',fontSize:'14px',marginBottom:'4px'
   }
 
+  const speakScript = (text) => {
+    if (!window.speechSynthesis) return
+    window.speechSynthesis.cancel()
+    const lines = text.match(/\*\*VO:\*\*.*|VO:.*|VOICE:.*|"([^"]+)"/g) || []
+    const voiceText = lines.length > 0
+      ? lines.map(l => l.replace(/\*\*VO:\*\*|\*\*VOICE:\*\*|VO:|VOICE:|"/g, '').trim()).join(' ')
+      : text.replace(/\*\*.*?\*\*|#{1,3}.*?\n|\(.*?\)|\[.*?\]/g, '').trim()
+    const utterance = new SpeechSynthesisUtterance(voiceText)
+    utterance.rate = voiceTone === 'Fast and Punchy' ? 1.3 : voiceTone === 'Slow and Cinematic' ? 0.8 : 1.0
+    utterance.pitch = emotion === 'Humor and Comedy' ? 1.2 : emotion === 'Horror and Terror' ? 0.7 : 1.0
+    utterance.volume = 1
+    utterance.onstart = () => setSpeaking(true)
+    utterance.onend = () => setSpeaking(false)
+    window.speechSynthesis.speak(utterance)
+  }
+
+  const stopSpeaking = () => {
+    window.speechSynthesis.cancel()
+    setSpeaking(false)
+  }
+
   const handleGenerate = async () => {
     if (!topic.trim()) {
       setError('Please enter a topic or story first.')
@@ -44,11 +66,12 @@ function App() {
     setLoading(true)
     setError('')
     setScript('')
+    window.speechSynthesis && window.speechSynthesis.cancel()
 
     const key = import.meta.env.VITE_GEMINI_API_KEY
     const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + key
 
-    const prompt = 'You are a world class short form video script writer. Generate a complete video script. STORY: ' + topic + ' STYLE: ' + style + ' EMOTION: ' + emotion + ' NARRATIVE: ' + narrative + ' CONFLICT: ' + conflict + ' CHARACTER: ' + character + ' SETTING: ' + setting + ' HOOK: ' + hook + ' TWIST: ' + twist + ' PACING: ' + pacing + ' VISUAL: ' + visualStyle + ' MUSIC: ' + musicMood + ' VOICE: ' + voiceTone + ' AUDIENCE: ' + audience + ' PLATFORM: ' + platform + ' LENGTH: ' + length + ' PILLAR: ' + contentPillar + ' CTA: ' + cta + ' Write the script with: TITLE, HOOK, SCENE 1, SCENE 2, SCENE 3, CLIMAX, RESOLUTION, CALL TO ACTION, CAPTION with hashtags.'
+    const prompt = 'You are a world class short form video script writer. Generate a complete video script. STORY: ' + topic + ' STYLE: ' + style + ' EMOTION: ' + emotion + ' NARRATIVE: ' + narrative + ' CONFLICT: ' + conflict + ' CHARACTER: ' + character + ' SETTING: ' + setting + ' HOOK: ' + hook + ' TWIST: ' + twist + ' PACING: ' + pacing + ' VISUAL: ' + visualStyle + ' MUSIC: ' + musicMood + ' VOICE: ' + voiceTone + ' AUDIENCE: ' + audience + ' PLATFORM: ' + platform + ' LENGTH: ' + length + ' PILLAR: ' + contentPillar + ' CTA: ' + cta + ' Write the script with: TITLE, HOOK, SCENE 1, SCENE 2, SCENE 3, CLIMAX, RESOLUTION, CALL TO ACTION, CAPTION with hashtags. Include VO: lines for every scene.'
 
     try {
       const res = await fetch(url, {
@@ -304,6 +327,21 @@ function App() {
         {script && (
           <div style={{marginTop:'32px',padding:'28px',backgroundColor:'#2a2a2a',borderRadius:'12px',border:'1px solid #ff6b35'}}>
             <h3 style={{margin:'0 0 16px 0',color:'#ff6b35'}}>Your Generated Script</h3>
+            <div style={{display:'flex',gap:'12px',marginBottom:'20px'}}>
+              <button
+                onClick={() => speakScript(script)}
+                disabled={speaking}
+                style={{padding:'12px 24px',backgroundColor:speaking?'#555':'#ff6b35',border:'none',borderRadius:'8px',color:'white',fontSize:'15px',fontWeight:'bold',cursor:speaking?'not-allowed':'pointer'}}
+              >
+                {speaking ? 'Speaking...' : 'Play Voiceover'}
+              </button>
+              <button
+                onClick={stopSpeaking}
+                style={{padding:'12px 24px',backgroundColor:'#333',border:'1px solid #555',borderRadius:'8px',color:'white',fontSize:'15px',cursor:'pointer'}}
+              >
+                Stop
+              </button>
+            </div>
             <pre style={{whiteSpace:'pre-wrap',fontFamily:'Arial, sans-serif',fontSize:'14px',lineHeight:'1.8',color:'#ddd',margin:0}}>
               {script}
             </pre>
