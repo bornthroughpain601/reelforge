@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import ReactDOM from 'react-dom/client'
 
 function App() {
@@ -24,8 +24,11 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [speaking, setSpeaking] = useState(false)
-  const [videoUrl, setVideoUrl] = useState(null)
-  const [generatingVideo, setGeneratingVideo] = useState(false)
+  const [scenes, setScenes] = useState([])
+  const [currentScene, setCurrentScene] = useState(0)
+  const [playing, setPlaying] = useState(false)
+  const canvasRef = useRef(null)
+  const intervalRef = useRef(null)
 
   const label = {
     color:'#ff6b35',fontWeight:'bold',fontSize:'13px',
@@ -39,35 +42,160 @@ function App() {
     borderRadius:'8px',color:'white',fontSize:'14px',marginBottom:'4px'
   }
 
-  const getStylePrompt = () => {
-    if (style === 'Doodle Animation') return 'hand drawn doodle animation style, whiteboard sketch, simple line art characters'
-    if (style === 'Cartoon Characters') return 'colorful cartoon animation style, animated characters, bright vivid colors, Pixar style'
-    if (style === 'Realistic Cinematic') return 'cinematic realistic style, film quality, dramatic lighting, photorealistic'
-    if (style === 'Whiteboard Explainer') return 'whiteboard animation, hand drawn on white background, marker drawing style'
-    if (style === 'Motion Graphics') return 'motion graphics, clean modern design, animated text and shapes, professional'
-    if (style === 'Stop Motion') return 'stop motion claymation style, clay figures, textured surfaces, warm studio lighting'
-    if (style === 'Typographic') return 'typographic animation, bold text on dark background, kinetic typography'
-    return 'mixed media animation style, creative visual composition'
+  const getBgColor = () => {
+    if (visualStyle === 'Dark Moody Cinematic') return '#0a0a0a'
+    if (visualStyle === 'Minimal Clean White') return '#ffffff'
+    if (visualStyle === 'Neon and Cyberpunk') return '#0d0221'
+    if (visualStyle === 'Vintage and Retro') return '#2c1810'
+    if (visualStyle === 'Nature and Earthy') return '#1a2e1a'
+    if (visualStyle === 'Bright Playful Colourful') return '#1a1a6e'
+    if (visualStyle === 'Black and White') return '#000000'
+    return '#0f0f0f'
   }
 
-  const getEmotionPrompt = () => {
-    if (emotion === 'Horror and Terror') return 'dark horror atmosphere, eerie lighting, suspenseful'
-    if (emotion === 'Humor and Comedy') return 'funny lighthearted upbeat cheerful comedic'
-    if (emotion === 'Love and Beauty') return 'romantic warm soft beautiful elegant'
-    if (emotion === 'Fury and Anger') return 'intense dramatic high energy powerful'
-    if (emotion === 'Courage and Heroism') return 'epic heroic inspiring triumphant'
-    if (emotion === 'Sadness and Compassion') return 'emotional touching melancholic tender'
-    if (emotion === 'Wonder and Amazement') return 'magical wondrous spectacular awe inspiring'
-    if (emotion === 'Peace and Serenity') return 'calm peaceful serene tranquil'
-    return 'expressive dynamic engaging'
+  const getTextColor = () => {
+    if (visualStyle === 'Minimal Clean White') return '#111111'
+    if (visualStyle === 'Black and White') return '#ffffff'
+    return '#ffffff'
   }
 
-  const extractSceneDescription = (scriptText) => {
-    const scenes = scriptText.match(/VISUAL:([^\n]+)/g) || []
-    if (scenes.length > 0) {
-      return scenes.slice(0, 3).map(s => s.replace('VISUAL:', '').trim()).join('. ')
+  const getAccentColor = () => {
+    if (visualStyle === 'Neon and Cyberpunk') return '#ff00ff'
+    if (visualStyle === 'Nature and Earthy') return '#7bc67e'
+    if (visualStyle === 'Vintage and Retro') return '#d4a853'
+    if (visualStyle === 'Bright Playful Colourful') return '#ffdd57'
+    if (visualStyle === 'Minimal Clean White') return '#ff6b35'
+    return '#ff6b35'
+  }
+
+  const extractScenes = (scriptText) => {
+    const voLines = scriptText.match(/\*?\*?VO:\*?\*?\s*"?([^"\n]+)"?/g) || []
+    const visualLines = scriptText.match(/\*?\*?VISUAL:\*?\*?\s*([^\n]+)/g) || []
+    const extracted = []
+    const maxScenes = Math.max(voLines.length, visualLines.length)
+    for (let i = 0; i < Math.min(maxScenes, 8); i++) {
+      const vo = voLines[i] ? voLines[i].replace(/\*?\*?VO:\*?\*?/, '').replace(/"/g, '').trim() : ''
+      const visual = visualLines[i] ? visualLines[i].replace(/\*?\*?VISUAL:\*?\*?/, '').trim() : ''
+      if (vo || visual) {
+        extracted.push({ vo, visual, index: i })
+      }
     }
-    return topic.slice(0, 200)
+    if (extracted.length === 0) {
+      const paragraphs = scriptText.split('\n').filter(l => l.trim().length > 20).slice(0, 6)
+      paragraphs.forEach((p, i) => {
+        extracted.push({ vo: p.trim().slice(0, 100), visual: '', index: i })
+      })
+    }
+    return extracted
+  }
+
+  const drawScene = (sceneIndex, sceneList) => {
+    const canvas = canvasRef.current
+    if (!canvas || !sceneList || sceneList.length === 0) return
+    const ctx = canvas.getContext('2d')
+    const scene = sceneList[sceneIndex]
+    if (!scene) return
+
+    const bg = getBgColor()
+    const textColor = getTextColor()
+    const accent = getAccentColor()
+
+    ctx.fillStyle = bg
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+    ctx.fillStyle = accent
+    ctx.fillRect(0, 0, canvas.width, 6)
+    ctx.fillRect(0, canvas.height - 6, canvas.width, 6)
+
+    ctx.fillStyle = accent + '33'
+    ctx.fillRect(20, 20, canvas.width - 40, 2)
+    ctx.fillRect(20, canvas.height - 22, canvas.width - 40, 2)
+
+    ctx.fillStyle = accent
+    ctx.font = 'bold 18px Arial'
+    ctx.textAlign = 'left'
+    ctx.fillText('REELFORGE', 30, 55)
+
+    ctx.fillStyle = textColor + '66'
+    ctx.font = '14px Arial'
+    ctx.textAlign = 'right'
+    ctx.fillText('Scene ' + (sceneIndex + 1) + ' of ' + sceneList.length, canvas.width - 30, 55)
+
+    if (scene.vo) {
+      const words = scene.vo.split(' ')
+      const lines = []
+      let currentLine = ''
+      const maxWidth = canvas.width - 80
+      ctx.font = 'bold 28px Arial'
+      words.forEach(word => {
+        const testLine = currentLine + (currentLine ? ' ' : '') + word
+        const metrics = ctx.measureText(testLine)
+        if (metrics.width > maxWidth && currentLine) {
+          lines.push(currentLine)
+          currentLine = word
+        } else {
+          currentLine = testLine
+        }
+      })
+      if (currentLine) lines.push(currentLine)
+
+      const lineHeight = 40
+      const totalHeight = lines.length * lineHeight
+      const startY = (canvas.height - totalHeight) / 2
+
+      ctx.fillStyle = accent
+      ctx.fillRect(30, startY - 20, 4, totalHeight + 10)
+
+      lines.forEach((line, i) => {
+        ctx.fillStyle = textColor
+        ctx.font = 'bold 28px Arial'
+        ctx.textAlign = 'left'
+        ctx.fillText(line, 50, startY + i * lineHeight)
+      })
+    }
+
+    if (scene.visual) {
+      const visualText = scene.visual.slice(0, 80)
+      ctx.fillStyle = textColor + '44'
+      ctx.font = 'italic 14px Arial'
+      ctx.textAlign = 'center'
+      ctx.fillText(visualText, canvas.width / 2, canvas.height - 50)
+    }
+
+    const progress = (sceneIndex + 1) / sceneList.length
+    ctx.fillStyle = accent + '33'
+    ctx.fillRect(30, canvas.height - 35, canvas.width - 60, 4)
+    ctx.fillStyle = accent
+    ctx.fillRect(30, canvas.height - 35, (canvas.width - 60) * progress, 4)
+  }
+
+  useEffect(() => {
+    if (scenes.length > 0) {
+      drawScene(currentScene, scenes)
+    }
+  }, [currentScene, scenes, visualStyle])
+
+  const playPreview = () => {
+    if (scenes.length === 0) return
+    setPlaying(true)
+    setCurrentScene(0)
+    let index = 0
+    intervalRef.current = setInterval(() => {
+      index++
+      if (index >= scenes.length) {
+        clearInterval(intervalRef.current)
+        setPlaying(false)
+        setCurrentScene(0)
+      } else {
+        setCurrentScene(index)
+      }
+    }, 3000)
+  }
+
+  const stopPreview = () => {
+    clearInterval(intervalRef.current)
+    setPlaying(false)
+    setCurrentScene(0)
   }
 
   const extractVoiceLines = (text) => {
@@ -75,15 +203,7 @@ function App() {
     if (voLines.length > 0) {
       return voLines.map(l => l.replace(/\*?\*?VO:\*?\*?/, '').replace(/"/g, '').trim()).join(' ')
     }
-    return text
-      .replace(/\*\*.*?\*\*/g, '')
-      .replace(/#{1,3}[^\n]*/g, '')
-      .replace(/\(.*?\)/g, '')
-      .replace(/\[.*?\]/g, '')
-      .replace(/---/g, '')
-      .replace(/\n+/g, ' ')
-      .trim()
-      .slice(0, 2000)
+    return text.replace(/\*\*.*?\*\*/g, '').replace(/#{1,3}[^\n]*/g, '').replace(/\(.*?\)/g, '').replace(/\[.*?\]/g, '').replace(/---/g, '').replace(/\n+/g, ' ').trim().slice(0, 2000)
   }
 
   const speakScript = (text) => {
@@ -110,37 +230,6 @@ function App() {
     setSpeaking(false)
   }
 
-  const generateVideo = async (scriptText) => {
-    setGeneratingVideo(true)
-    setVideoUrl(null)
-    setError('')
-    try {
-      const sceneDescription = extractSceneDescription(scriptText)
-      const stylePrompt = getStylePrompt()
-      const emotionPrompt = getEmotionPrompt()
-      const videoPrompt = stylePrompt + ', ' + emotionPrompt + ', ' + sceneDescription + ', short form social media video, vertical 9:16 aspect ratio'
-      const res = await fetch('https://zsky.ai/api/v1/video/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: videoPrompt,
-          duration: 5,
-          resolution: '1080p',
-          audio: true
-        })
-      })
-      if (!res.ok) {
-        throw new Error('Video generation failed. Status: ' + res.status)
-      }
-      const blob = await res.blob()
-      const url = URL.createObjectURL(blob)
-      setVideoUrl(url)
-    } catch (e) {
-      setError('Video error: ' + e.message)
-    }
-    setGeneratingVideo(false)
-  }
-
   const handleGenerate = async () => {
     if (!topic.trim()) {
       setError('Please enter a topic or story first.')
@@ -149,7 +238,9 @@ function App() {
     setLoading(true)
     setError('')
     setScript('')
-    setVideoUrl(null)
+    setScenes([])
+    setCurrentScene(0)
+    stopPreview()
     window.speechSynthesis.cancel()
 
     const key = import.meta.env.VITE_GEMINI_API_KEY
@@ -160,9 +251,7 @@ function App() {
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }]
-        })
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
       })
       const data = await res.json()
       if (data.error) {
@@ -170,7 +259,11 @@ function App() {
       } else {
         const text = data.candidates[0].content.parts[0].text
         setScript(text)
-        await generateVideo(text)
+        const extractedScenes = extractScenes(text)
+        setScenes(extractedScenes)
+        if (extractedScenes.length > 0) {
+          setTimeout(() => drawScene(0, extractedScenes), 100)
+        }
       }
     } catch (e) {
       setError('Error: ' + e.message)
@@ -403,34 +496,38 @@ function App() {
         )}
         <button
           onClick={handleGenerate}
-          disabled={loading || generatingVideo}
-          style={{display:'block',width:'100%',padding:'20px',backgroundColor:loading||generatingVideo?'#555':'#ff6b35',border:'none',borderRadius:'10px',color:'white',fontSize:'20px',fontWeight:'bold',cursor:loading||generatingVideo?'not-allowed':'pointer',letterSpacing:'1px',marginTop:'24px'}}
+          disabled={loading}
+          style={{display:'block',width:'100%',padding:'20px',backgroundColor:loading?'#555':'#ff6b35',border:'none',borderRadius:'10px',color:'white',fontSize:'20px',fontWeight:'bold',cursor:loading?'not-allowed':'pointer',letterSpacing:'1px',marginTop:'24px'}}
         >
-          {loading ? 'Writing Script...' : generatingVideo ? 'Generating Video...' : 'Generate Video'}
+          {loading ? 'Generating Your Script...' : 'Generate Video'}
         </button>
-        {generatingVideo && (
-          <div style={{marginTop:'20px',padding:'20px',backgroundColor:'#2a2a2a',borderRadius:'8px',textAlign:'center'}}>
-            <p style={{color:'#ff6b35',margin:0}}>Generating your video... This takes about 30 seconds.</p>
-          </div>
-        )}
-        {videoUrl && (
+        {scenes.length > 0 && (
           <div style={{marginTop:'32px',padding:'28px',backgroundColor:'#2a2a2a',borderRadius:'12px',border:'1px solid #ff6b35'}}>
-            <h3 style={{margin:'0 0 16px 0',color:'#ff6b35'}}>Your Generated Video</h3>
-            <video
-              src={videoUrl}
-              controls
-              style={{width:'100%',borderRadius:'8px',marginBottom:'16px'}}
+            <h3 style={{margin:'0 0 16px 0',color:'#ff6b35'}}>Video Preview</h3>
+            <canvas
+              ref={canvasRef}
+              width={540}
+              height={960}
+              style={{width:'100%',borderRadius:'8px',marginBottom:'16px',display:'block'}}
             />
-          </div>
-        )}
-        {script && (
-          <div style={{marginTop:'32px',padding:'28px',backgroundColor:'#2a2a2a',borderRadius:'12px',border:'1px solid #333'}}>
-            <h3 style={{margin:'0 0 16px 0',color:'#ff6b35'}}>Your Generated Script</h3>
-            <div style={{display:'flex',gap:'12px',marginBottom:'20px',flexWrap:'wrap'}}>
+            <div style={{display:'flex',gap:'12px',marginBottom:'16px',flexWrap:'wrap'}}>
+              <button
+                onClick={playPreview}
+                disabled={playing}
+                style={{padding:'12px 24px',backgroundColor:playing?'#555':'#ff6b35',border:'none',borderRadius:'8px',color:'white',fontSize:'15px',fontWeight:'bold',cursor:playing?'not-allowed':'pointer'}}
+              >
+                {playing ? 'Playing...' : 'Play Preview'}
+              </button>
+              <button
+                onClick={stopPreview}
+                style={{padding:'12px 24px',backgroundColor:'#333',border:'1px solid #555',borderRadius:'8px',color:'white',fontSize:'15px',cursor:'pointer'}}
+              >
+                Stop
+              </button>
               <button
                 onClick={() => speakScript(script)}
                 disabled={speaking}
-                style={{padding:'12px 24px',backgroundColor:speaking?'#555':'#ff6b35',border:'none',borderRadius:'8px',color:'white',fontSize:'15px',fontWeight:'bold',cursor:speaking?'not-allowed':'pointer'}}
+                style={{padding:'12px 24px',backgroundColor:speaking?'#555':'#333',border:'1px solid #ff6b35',borderRadius:'8px',color:'white',fontSize:'15px',cursor:speaking?'not-allowed':'pointer'}}
               >
                 {speaking ? 'Speaking...' : 'Play Voiceover'}
               </button>
@@ -438,9 +535,18 @@ function App() {
                 onClick={stopSpeaking}
                 style={{padding:'12px 24px',backgroundColor:'#333',border:'1px solid #555',borderRadius:'8px',color:'white',fontSize:'15px',cursor:'pointer'}}
               >
-                Stop
+                Stop Voice
               </button>
             </div>
+            <div style={{padding:'16px',backgroundColor:'#1a1a1a',borderRadius:'8px',marginBottom:'16px'}}>
+              <p style={{margin:'0 0 8px 0',color:'#ff6b35',fontWeight:'bold',fontSize:'13px'}}>NEXT STEP — GET YOUR ANIMATED VIDEO</p>
+              <p style={{margin:'0 0 8px 0',color:'#aaa',fontSize:'13px'}}>Copy your scene descriptions below and paste them into Seedance at seedance.tv for free animated video generation. No watermark. No credit card.</p>
+            </div>
+          </div>
+        )}
+        {script && (
+          <div style={{marginTop:'32px',padding:'28px',backgroundColor:'#2a2a2a',borderRadius:'12px',border:'1px solid #333'}}>
+            <h3 style={{margin:'0 0 16px 0',color:'#ff6b35'}}>Your Generated Script</h3>
             <pre style={{whiteSpace:'pre-wrap',fontFamily:'Arial, sans-serif',fontSize:'14px',lineHeight:'1.8',color:'#ddd',margin:0}}>
               {script}
             </pre>
